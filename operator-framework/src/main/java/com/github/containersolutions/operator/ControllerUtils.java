@@ -20,12 +20,14 @@ class ControllerUtils {
         return getAnnotation(controller).crdName();
     }
 
-    static <R extends CustomResource> Class<? extends CustomResourceList<R>> getCustomResourceListClass(ResourceController controller) {
-        return (Class<? extends CustomResourceList<R>>) getAnnotation(controller).customResourceListClass();
+    static <R extends CustomResource> Class<? extends CustomResourceList<R>> getDefaultCustomResourceListClass() {
+        CustomResourceList<R> customResourceList = new CustomResourceList<R>();
+        return (Class<? extends CustomResourceList<R>>) customResourceList.getClass();
     }
 
-    static <R extends CustomResource> Class<? extends CustomResourceDoneable<R>> getCustomResourceDonebaleClass(ResourceController controller) {
-        return (Class<? extends CustomResourceDoneable<R>>) getAnnotation(controller).customResourceDoneableClass();
+    static <R extends CustomResource> Class<? extends CustomResourceDoneable<R>> getDefaultCustomResourceDoneableClass() {
+        CustomResourceDoneable customResourceDoneable = new CustomResourceDoneable(null, null);
+        return (Class<? extends CustomResourceDoneable<R>>) customResourceDoneable.getClass();
     }
 
     private static Controller getAnnotation(ResourceController controller) {
