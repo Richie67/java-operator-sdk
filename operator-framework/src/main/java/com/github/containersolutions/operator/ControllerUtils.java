@@ -42,16 +42,14 @@ class ControllerUtils {
         pool = ClassPool.getDefault();
         pool.insertClassPath(new ClassClassPath(ControllerUtils.class));
 
-        CtClass customResource = null;
-        CtClass superClass = null;
-        try {
-            superClass = pool.get("io.fabric8.kubernetes.client.CustomResourceDoneable");
-            customResource = pool.makeClass(String.valueOf(customResourceClass));
-        } catch (NotFoundException e) {
-            log.error("Error getting superClass: {}", e);
-        }
         String className = getPackageName(customResourceClass.getName(), "GeneratedTestCustomResourceDoneable");
-        CtClass customDoneable = pool.makeClass(className, superClass);
+        String superClassName = "io.fabric8.kubernetes.client.CustomResourceDoneable";
+        CtClass customDoneable = getOrCreateClass(className, superClassName);
+        if (isClassInPool(className)) {
+            return getClassFromCtClass(customDoneable);
+        }
+
+        CtClass customResource = pool.makeClass(String.valueOf(customResourceClass));
         try {
             CtClass function = pool.get("io.fabric8.kubernetes.api.builder.Function");
             CtClass[] argTypes = {customResource, function};
@@ -70,17 +68,39 @@ class ControllerUtils {
         pool = ClassPool.getDefault();
         pool.insertClassPath(new ClassClassPath(ControllerUtils.class));
 
-        CtClass superClass = null;
-        try {
-            superClass = pool.get("io.fabric8.kubernetes.client.CustomResourceList");
-        } catch (NotFoundException e) {
-            log.error("Error getting superClass: {}", e);
-        }
         String className = getPackageName(customResourceClass.getName(), "GeneratedTestCustomResourceList");
-        CtClass customList = pool.makeClass(className, superClass);
-
+        String superClassName = "io.fabric8.kubernetes.client.CustomResourceList";
+        CtClass customList = getOrCreateClass(className, superClassName);
         Class<? extends CustomResourceList<R>> listClass = getClassFromCtClass(customList);
         return listClass;
+    }
+
+    private static boolean isClassInPool(String className) {
+        try {
+            pool.get(className);
+            return true;
+        } catch (NotFoundException e) {
+            log.debug("Class {} not in pool", className);
+            return false;
+        }
+    }
+
+    private static CtClass getOrCreateClass(String className, String superClassName){
+        CtClass customClass;
+        try {
+            customClass = pool.get(className);
+            customClass.defrost();
+        } catch (NotFoundException ce) {
+            log.info("Class not found, creating new: {}", className);
+            CtClass superClass = null;
+            try {
+                superClass = pool.get(superClassName);
+            } catch (NotFoundException sce) {
+                log.error("Error getting superClass: {}", sce);
+            }
+            customClass = pool.makeClass(className, superClass);
+        }
+        return customClass;
     }
 
     private static Controller getAnnotation(ResourceController controller) {
